@@ -2,6 +2,17 @@ import re
 import time
 import datetime
 import gdata.calendar.service
+from django.utils.tzinfo import FixedOffset, LocalTimezone
+
+DATE_FORMAT = '%Y-%m-%dT%H:%M:%S.000Z'
+
+def format_datetime(date):
+    """
+    A utility method that converts the datetime to UTC serialized
+    for Google Calendar.
+    """
+    local = date.replace(tzinfo=LocalTimezone(date))
+    return local.astimezone(FixedOffset(0)).strftime(DATE_FORMAT)
 
 def parse_date_w3dtf(dateString):
 	def __extract_date(m):
