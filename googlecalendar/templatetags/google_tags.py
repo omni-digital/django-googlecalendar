@@ -4,7 +4,7 @@ from django.forms.util import flatatt
 from django.utils.safestring import mark_safe
 from google.utils import request_single_token
 
-from google.models import Calendar
+from googlecalendar.models import Calendar
 
 register = template.Library()
 
