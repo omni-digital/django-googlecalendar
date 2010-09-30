@@ -1,4 +1,5 @@
 import urllib
+import itertools
 from django import template 
 from django.forms.util import flatatt
 from django.utils.safestring import mark_safe
@@ -69,18 +70,22 @@ class CalendarNode(template.Node):
                          ctz="Europe/London"
                         )
 
-        #calendars = [calendar.resolve(context) for calendar in self.calendars]
         calendars = []
-        for calendar in self.calendars:
-            calendar = calendar.resolve(context)
-            if not isinstance(calendar, Calendar):
-                try:
-                    calendar = Calendar.objects.get(calendar_id=calendar)
-                except Calendar.DoesNotExist:
-                    continue
+        def add_calendars(cals):
+           for cal in cals:
 
-            calendars.append(calendar)
+               if isinstance(cal, basestring):
+                   try:
+                       cal = Calendar.objects.get(calendar_id=cal)
+                   except Calendar.DoesNotExist:
+                       continue
+               elif getattr(cal, '__iter__', False):#isinstance(cal, (list, tuple)):
+                   add_calendars(cal)
+                   continue
 
+               calendars.append(cal)
+
+        add_calendars([cal.resolve(context) for cal in self.calendars])
 
         if not calendars:
             return ''
