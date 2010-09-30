@@ -2,8 +2,7 @@ import urllib
 from django import template 
 from django.forms.util import flatatt
 from django.utils.safestring import mark_safe
-from google.utils import request_single_token
-
+from googlecalendar.utils import request_single_token
 from googlecalendar.models import Calendar
 
 register = template.Library()
