@@ -29,7 +29,11 @@ class CalendarNode(template.Node):
         Render a google calendar (iframe) embed.
 
         Usage:
-            {% calendar calendar width="580" height="350" %}
+            {% calendar %}
+            {% calendar 'joe@gmail.com' %}
+            {% calendar 'joe@gmail.com' width="580" height="350" %}
+            {% calendar 'joe@gmail.com' 'james@gmail.com' width="580" height="350" %}
+            {% calendar 'joe@gmail.com' 'james@gmail.com' calendar_instance width="580" height="350" %}
     """
 
     COLOURS = ['#D96666', '#E67399', '#8C66D9', '#668CB3', '#668CD9', '#59BFB3', '#65AD89', '#4CB052', '#8CBF40', '#E0C240',
@@ -70,22 +74,25 @@ class CalendarNode(template.Node):
                          ctz="Europe/London"
                         )
 
-        calendars = []
-        def add_calendars(cals):
-           for cal in cals:
+        if not self.calendars:
+            calendars = Calendar.objects.all()
+        else:
+            calendars = []
+            def add_calendars(cals):
+               for cal in cals:
 
-               if isinstance(cal, basestring):
-                   try:
-                       cal = Calendar.objects.get(calendar_id=cal)
-                   except Calendar.DoesNotExist:
+                   if isinstance(cal, basestring):
+                       try:
+                           cal = Calendar.objects.get(calendar_id=cal)
+                       except Calendar.DoesNotExist:
+                           continue
+                   elif getattr(cal, '__iter__', False):#isinstance(cal, (list, tuple)):
+                       add_calendars(cal)
                        continue
-               elif getattr(cal, '__iter__', False):#isinstance(cal, (list, tuple)):
-                   add_calendars(cal)
-                   continue
 
-               calendars.append(cal)
+                   calendars.append(cal)
 
-        add_calendars([cal.resolve(context) for cal in self.calendars])
+            add_calendars([cal.resolve(context) for cal in self.calendars])
 
         if not calendars:
             return ''
@@ -114,13 +121,10 @@ class CalendarNode(template.Node):
 def embedcalendar(parser, token):
     bits = token.split_contents() 
 
-    if len(bits) < 2:
-        raise template.TemplateSyntaxError("'%s tag requires at least 1 arguments." % bits[0])
-
-    calendars = [parser.compile_filter(bits[1])]
+    calendars = []
     dict = {}
     try:
-        for bit in bits[2:]:
+        for bit in bits[1:]:
             try:
                 bit.index('=')
             except ValueError:
