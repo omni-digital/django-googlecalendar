@@ -1,0 +1,2 @@
+recursive-include googlecalendar/templates *.html
+recursive-include googlecalendar/templates *.txt
