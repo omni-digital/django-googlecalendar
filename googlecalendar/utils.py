@@ -5,6 +5,7 @@ import gdata.calendar.service
 from django.utils.tzinfo import FixedOffset, LocalTimezone
 
 DATE_FORMAT = '%Y-%m-%dT%H:%M:%S.000Z'
+ROLE_URI_ROOT = 'http://schemas.google.com/gCal/2005#'
 
 def format_datetime(date):
     """
@@ -13,6 +14,13 @@ def format_datetime(date):
     """
     local = date.replace(tzinfo=LocalTimezone(date))
     return local.astimezone(FixedOffset(0)).strftime(DATE_FORMAT)
+
+def to_role_uri(role):
+    return '%s%s' % (ROLE_URI_ROOT, role, )
+
+def from_role_uri(role):
+    return role.replace(ROLE_URI_ROOT, '')
+
 
 def parse_date_w3dtf(dateString):
 	def __extract_date(m):

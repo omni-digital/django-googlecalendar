@@ -1,18 +1,33 @@
 import re
 import urllib
 from django.db import models
-import gdata.calendar.service
-import gdata.service
+import gdata
 import atom
 import datetime
 from django.db.models import Manager
-from utils import parse_date_w3dtf, format_datetime
+from utils import parse_date_w3dtf, format_datetime, to_role_uri, from_role_uri
 
 VERSION = '0.3'
 
 _services = {}
 
 re_cal_id = re.compile(r".*/(.*)")
+
+
+def with_request_error_try(function, attempts=3):
+    """
+    Attempt to call the function within a RequestError try / catch.
+    """
+    while True:
+        try:
+            return function()
+        except gdata.service.RequestError, e:
+            attempts -= 1
+            if attempts == 0:
+                raise
+            if e.args[0]['status'] != 302:
+                raise
+
 
 class Account(models.Model):
     email = models.CharField(max_length = 100, blank = True)
@@ -68,21 +83,32 @@ class CalendarManager(Manager):
                 instance.feed_uri = link.href
                 break
 
+        # Default Acl
+        rule = instance.getAclRule('default')
+        instance.default_share = rule and from_role_uri(rule.role.value)
+
+
         if commit:
             instance.save()
 
         return instance
 
 class Calendar(models.Model):
+    SHARE_CHOICES = ( 
+        ('freebusy','See only free / busy (hide details)'),
+        ('read','See all event details'),
+    )
     account = models.ForeignKey(Account)
-    uri = models.CharField(max_length = 255, unique = True)
+    uri = models.CharField(max_length = 255, unique = True, editable=False, help_text='Google calendar address. Leave blank to create a Google calendar.')
     calendar_id = models.CharField(max_length = 255, editable=False, unique = True)
     title = models.CharField(max_length = 100)
-    where = models.CharField(max_length = 100, blank = True)
-    color = models.CharField(max_length = 10, blank = True)
-    timezone = models.CharField(max_length = 100, blank = True)
+    where = models.CharField(max_length = 100, blank = True, help_text='Location (e.g Oxford, UK).')
+    color = models.CharField(max_length = 10, blank = True, help_text='Leave blank to populate from Google.')
+    timezone = models.CharField(max_length = 100, blank = True, help_text='Leave blank to populate from Google.')
     summary = models.TextField(blank=True, null=True)
     feed_uri = models.CharField(max_length = 255, blank = True, editable=False)
+
+    default_share = models.CharField("Share with public", max_length=31, blank = True, null = True, choices=SHARE_CHOICES)
 
     objects = CalendarManager()
 
@@ -115,7 +141,7 @@ class Calendar(models.Model):
             self.timezone = gcal.timezone.value
 
         if new:
-            new_gcal = self.account.service.InsertCalendar(new_calendar=gcal)
+            new_gcal = with_request_error_try(lambda: self.account.service.InsertCalendar(new_calendar=gcal))
             # gooogle replaces the title with the (email address) style Calendar Id
             #self.calendar_id = new_gcal.title.text
             new_gcal.title = atom.Title(text=self.title)
@@ -128,70 +154,85 @@ class Calendar(models.Model):
                     break
 
         else:
-            new_gcal = self.account.service.UpdateCalendar(calendar=gcal)
+            new_gcal = with_request_error_try(lambda: self.account.service.UpdateCalendar(calendar=gcal))
 
         m = re_cal_id.match(self.uri)
         if m:
             self.calendar_id = urllib.unquote(m.group(1))
 
-        # TODO This should be managed by a related ACL model
-        # Make the calendar read (share) by default
-        self.setAclRole(role='read', scope_type='default')
+        # ACL model
+        rule = self.getAclRule('default')
+        if not self.default_share:
+            # Not sharing
+            if rule is not None:
+                # remove the rule
+                with_request_error_try(lambda: self.account.service.DeleteAclEntry(rule.GetEditLink().href))
+        else:
+            if rule is None:
+                # new rule
+                self.setAclRule(role=self.default_share, scope_type='default')
+            elif to_role_uri(self.default_share) != rule.role.value:
+                # role change
+                self.setAclRule(rule=rule, role=self.default_share)
+
 
         super(Calendar, self).save()
 
-    def setAclRole(self, role='read', scope_type='default', scope_value=None):
+    @property
+    def gCalendar(self):
+        if getattr(self, '_gCalendar', None):
+            return self._gCalendar
+        if self.uri:
+            for c in self.account.service.GetOwnCalendarsFeed().entry:
+                if self.uri == c.id.text:
+                    self._gCalendar = c
+                    return self._gCalendar
+
+        return None
+
+    def getAclRule(self, scope_type='default',):
         gcal = self.gCalendar
         if not gcal:
-            return
+            return None
         aclink = gcal.GetAclLink()
-
-        import gdata
-
-        cRole = gdata.calendar.Role(value='http://schemas.google.com/gCal/2005#%s' % (role))
 
         try:
             #try to get the entry
-            rule = self.account.service.GetCalendarAclEntry('%s/%s' % (aclink.href, scope_type))
+            return self.account.service.GetCalendarAclEntry('%s/%s' % (aclink.href, scope_type))
         except gdata.service.RequestError, e:
-            if e.message['reason'] != 'Not Found':
+            if e.args[0]['reason'] != 'Not Found':
                 raise
+            return None
 
+
+    def setAclRule(self, rule=None, role='read', scope_type='default', scope_value=None):
+        """
+        Set the role for a rule. If no rule is specified a new rule will be created with the provides scope_type / scope_type.
+        """
+
+        gcal = self.gCalendar
+        if not gcal:
+            return None
+        aclink = gcal.GetAclLink()
+
+        newRole = gdata.calendar.Role(value=to_role_uri(role))
+
+        if rule is None:
             # add the entry
             rule = gdata.calendar.CalendarAclEntry()
-            rule.role = cRole
 
             rule.scope = gdata.calendar.Scope()
             rule.scope.type = scope_type
             if scope_value:
                 rule.scope.value = scope_value
 
-            returned_rule = self.account.service.InsertAclEntry(rule, aclink.href)
+            rule.role = newRole
+            return with_request_error_try(lambda: self.account.service.InsertAclEntry(rule, aclink.href))
         else:
             # update the entry
-            rule.role = cRole
-            returned_rule = self.account.service.UpdateAclEntry(rule.GetEditLink().href, rule)
+            rule.role = newRole
+            return with_request_error_try(lambda: self.account.service.UpdateAclEntry(rule.GetEditLink().href, rule))
 
-    @property
-    def gCalendar(self):
-        if self.uri:
-            for c in self.account.service.GetOwnCalendarsFeed().entry:
-                if self.uri == c.id.text:
-                    return c
-
-        return None
-
-    #def getAclRule(self, role):
-    #    gcal = self.gCalendar
-    #    if not gcal:
-    #        return
-
-    #    role_uri = 'http://schemas.google.com/gCal/2005#%s' % (role)
-    #    for r in self.account.service.GetCalendarAclFeed(gcal.GetAclLink().href).entry:
-    #        if role_uri == r.role.value:
-    #            return r
-
-    #    return None
 
     def get_events(self, commit=True):
         events = self.account.service.GetCalendarEventFeed(uri = self.feed_uri)
@@ -245,7 +286,7 @@ class Event(models.Model):
             end_time = format_datetime(self.end_time)
             entry.when = []
             entry.when.append(gdata.calendar.When(start_time = start_time, end_time = end_time))
-            self.calendar.account.service.UpdateEvent(entry.GetEditLink().href, entry)
+            new_entry = with_request_error_try(lambda: self.calendar.account.service.UpdateEvent(entry.GetEditLink().href, entry))
         else:
             entry = gdata.calendar.CalendarEventEntry()
             entry.title = atom.Title(text = self.title)
@@ -257,7 +298,7 @@ class Event(models.Model):
             start_time = format_datetime(self.start_time)
             end_time = format_datetime(self.end_time)
             entry.when.append(gdata.calendar.When(start_time = start_time, end_time = end_time))
-            new_entry = self.calendar.account.service.InsertEvent(entry, self.calendar.feed_uri)
+            new_entry = with_request_error_try(lambda: self.calendar.account.service.InsertEvent(entry, self.calendar.feed_uri))
             self.uri = new_entry.id.text
             self.edit_uri = new_entry.GetEditLink().href
             self.view_uri = new_entry.GetHtmlLink().href
