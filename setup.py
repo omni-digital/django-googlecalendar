@@ -25,6 +25,7 @@ setup(
     packages = find_packages(),
     requires=[
         "gdata",
+        "feincms",
     ],
     version = "0.1",
     description = "This project implements Google Calendar API as django objects.",

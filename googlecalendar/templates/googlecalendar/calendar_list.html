@@ -1,0 +1,20 @@
+{% extends "googlecalendar/base.html" %}
+
+{% load i18n  pagination_tags %}
+
+{% block content-title %}
+    <h2>{% trans 'Calendars' %}</h2>
+{% endblock %}
+
+{% block content-body %}
+
+    {% autopaginate object_list 10 %}
+    <dl >
+    {% for calendar in object_list %}  
+        <dt><a href="{{calendar.get_absolute_url }}">{{ calendar }}</a></dt>
+        <dd>{{ calendar.summary }}</dd>
+    {% endfor %}
+    </dl>
+    {% paginate %}
+    
+{% endblock %}

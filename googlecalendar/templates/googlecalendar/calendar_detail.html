@@ -1,0 +1,21 @@
+{% extends "googlecalendar/base.html" %}
+
+{% load i18n pagination_tags %}
+
+{% block content-title %}
+    <h2>{{ object }}</h2>
+{% endblock %}
+
+{% block content-body %}
+
+{% with object.event_set.all as events %} 
+{% autopaginate events 10 %}
+<dl>
+    {% for event in events %}  
+    <dt><a href="{{event.get_absolute_url }}">{{ event.title }}</a> {{ event.start_date|date }} - {{ event.end_date|date }}</dt>
+    <dd>{{ event.summary }}</dd>
+    {% endfor %}
+</dl>
+{% paginate %}
+{% endwith %}
+{% endblock %}

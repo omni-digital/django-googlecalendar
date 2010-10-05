@@ -6,6 +6,14 @@ import atom
 import datetime
 from django.db.models import Manager
 from utils import parse_date_w3dtf, format_datetime, to_role_uri, from_role_uri
+from django.utils.translation import ugettext_lazy as _
+
+
+from feincms.models import Base
+from feincms.content.medialibrary.models import MediaFileContent
+from feincms.content.richtext.models import RichTextContent
+
+import mptt
 
 VERSION = '0.3'
 
@@ -95,26 +103,32 @@ class CalendarManager(Manager):
 
 class Calendar(models.Model):
     SHARE_CHOICES = ( 
-        ('freebusy','See only free / busy (hide details)'),
-        ('read','See all event details'),
+        ('freebusy', _('See only free / busy (hide details)')),
+        ('read', _('See all event details')),
     )
     account = models.ForeignKey(Account)
-    uri = models.CharField(max_length = 255, unique = True, editable=False, help_text='Google calendar address. Leave blank to create a Google calendar.')
+    uri = models.CharField(max_length = 255, unique = True, editable=False, help_text=_('Google calendar address. Leave blank to create a Google calendar.'))
     calendar_id = models.CharField(max_length = 255, editable=False, unique = True)
     title = models.CharField(max_length = 100)
-    where = models.CharField(max_length = 100, blank = True, help_text='Location (e.g Oxford, UK).')
-    color = models.CharField(max_length = 10, blank = True, help_text='Leave blank to populate from Google.')
-    timezone = models.CharField(max_length = 100, blank = True, help_text='Leave blank to populate from Google.')
+    slug = models.SlugField(max_length = 255, help_text=_('This will be automatically generated from the  title'), unique=True)
+    where = models.CharField(max_length = 100, blank = True, help_text=_('Location (e.g Oxford, UK).'))
+    color = models.CharField(max_length = 10, blank = True, help_text=_('Leave blank to populate from Google.'))
+    timezone = models.CharField(max_length = 100, blank = True, help_text=_('Leave blank to populate from Google.'))
     summary = models.TextField(blank=True, null=True)
     feed_uri = models.CharField(max_length = 255, blank = True, editable=False)
 
-    default_share = models.CharField("Share with public", max_length=31, blank = True, null = True, choices=SHARE_CHOICES)
+    default_share = models.CharField(_("Share with public"), max_length=31, blank = True, null = True, choices=SHARE_CHOICES)
 
     objects = CalendarManager()
 
     def __unicode__(self):
         return self.title
 
+    @models.permalink
+    def get_absolute_url(self):
+        return ('googlecalendar_detail', (), {
+                'calendar': self.slug,
+                })
 
     def save(self):
         gcal = self.gCalendar
@@ -251,7 +265,7 @@ class EventManager(Manager):
             instance = self.model(calendar = calendar, uri = uri)
 
         instance.title = data.title.text or ''
-        instance.content = data.content.text or ''
+        instance.summary = data.content.text or ''
         instance.start_time = parse_date_w3dtf(data.when[0].start_time)
         instance.end_time = parse_date_w3dtf(data.when[0].end_time)
         instance.edit_uri = data.GetEditLink().href
@@ -262,26 +276,40 @@ class EventManager(Manager):
 
         return instance
 
-class Event(models.Model):
-    objects = EventManager()
+class Event(Base):
     calendar = models.ForeignKey(Calendar)
     uri = models.CharField(max_length = 255, unique = True, editable=False)
     title = models.CharField(max_length = 255)
+    slug = models.SlugField(max_length = 255, help_text=_('This will be automatically generated from the  title'))
     edit_uri = models.CharField(max_length = 255, editable=False)
     view_uri = models.CharField(max_length = 255, editable=False)
-    content = models.TextField(blank = True)
+    summary = models.TextField(blank = True)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
 
+    objects = EventManager()
+
+    class Meta:
+        ordering = ('-start_time',)
+        get_latest_by = 'start_time'
+        unique_together = ('calendar', 'slug')
+
     def __unicode__(self):
         return u'%s (%s - %s)' % (self.title, self.start_time, self.end_time)
+
+    @models.permalink
+    def get_absolute_url(self):
+        return ('googlecalendar_event', (), {
+                'calendar': self.calendar.slug,
+                'event': self.slug,
+                })
 
     def save(self):
         if self.uri: 
             # existing event, update
             entry = self.calendar.account.service.GetCalendarEventEntry(uri = self.edit_uri)
             entry.title.text = self.title
-            entry.content.text = self.content
+            entry.content.text = self.summary
             start_time = format_datetime(self.start_time)
             end_time = format_datetime(self.end_time)
             entry.when = []
@@ -290,7 +318,7 @@ class Event(models.Model):
         else:
             entry = gdata.calendar.CalendarEventEntry()
             entry.title = atom.Title(text = self.title)
-            entry.content = atom.Content(text = self.content)
+            entry.content = atom.Content(text = self.summary)
             if not self.start_time:
                 self.start_time = datetime.datetime.utcnow()
             if not self.end_time:
@@ -310,5 +338,11 @@ class Event(models.Model):
             # existing event, delete
             self.calendar.account.service.DeleteEvent(self.edit_uri)
         super(Event, self).delete()
+
+Event.register_regions(
+    ('main', _('Main region')),
+    )
+Event.create_content_type(RichTextContent)
+Event.create_content_type(MediaFileContent, POSITION_CHOICES=(('default', _('Default')),))
 
 
