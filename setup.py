@@ -31,4 +31,5 @@ setup(
     author = "Incuna Ltd",
     author_email = "admin@incuna.com",
     url = "http://incuna.com/",
+    include_package_data=True,
 )
