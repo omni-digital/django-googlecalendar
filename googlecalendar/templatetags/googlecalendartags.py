@@ -1,10 +1,40 @@
 import urllib
 import itertools
+from django.conf import settings
 from django import template 
 from django.forms.util import flatatt
 from django.utils.safestring import mark_safe
 from googlecalendar.utils import request_single_token
 from googlecalendar.models import Calendar
+
+GOOGLECALENDAR_DEFAULTS = dict(
+    # iframe attributes 
+    style=" border-width:0 ", 
+    width="800", 
+    height="600", 
+    frameborder="0", 
+    scrolling="no",
+    # Calender attributes
+    showTitle="0", 
+    showCalendars="1", 
+    showTz="0", 
+    wkst="1", 
+    bgcolor="#FFFFFF", 
+    ctz="Europe/London")
+
+IFRAME_ATTRS = (
+    'style',
+    'width',
+    'height',
+    'frameborder',
+    'scrolling',
+    'longdesc',
+    'marginheight',
+    'marginwidth',
+)
+
+if hasattr(settings, 'GOOGLECALENDAR_DEFAULTS'):
+    GOOGLECALENDAR_DEFAULTS.update(settings.GOOGLECALENDAR_DEFAULTS)
 
 register = template.Library()
 
@@ -60,19 +90,15 @@ class CalendarNode(template.Node):
 
     def render(self, context):
 
-        final_attrs = dict(style=" border-width:0 ", 
-                           width="800", 
-                           height="600", 
-                           frameborder="0", 
-                           scrolling="no")
+        iframe_attrs = {}
+        calendar_attrs = {}
+        for key, value in GOOGLECALENDAR_DEFAULTS.items():
+            if key in IFRAME_ATTRS:
+                iframe_attrs[key] = value
+            else:
+                calendar_attrs[key] = value
 
-        src_attrs = dict(showTitle="0", 
-                         showCalendars="1", 
-                         showTz="0", 
-                         wkst="1", 
-                         bgcolor="#FFFFFF", 
-                         ctz="Europe/London"
-                        )
+
 
         if not self.calendars:
             calendars = Calendar.objects.all()
@@ -97,25 +123,21 @@ class CalendarNode(template.Node):
         if not calendars:
             return ''
 
-        attrs = {}
         for key in self.attrs:
             value = self.attrs[key].resolve(context) or self.attrs[key]
-            if key in src_attrs:
-                src_attrs[key] = value
+            if key in IFRAME_ATTRS:
+                iframe_attrs[key] = value
             else:
-                attrs[key] = value
-
-        if attrs:
-            final_attrs.update(attrs)
+                calendar_attrs[key] = value
 
         coulours = self.coulours()
-        src = "https://www.google.com/calendar/embed?%s" % ( '&'.join(["%s=%s" % (k, urllib.quote(v)) for k, v in src_attrs.items()]) )
+        src = "https://www.google.com/calendar/embed?%s" % ( '&'.join(["%s=%s" % (k, urllib.quote(v)) for k, v in calendar_attrs.items()]) )
         for calendar in calendars:
             src += "&src=%s&color=%s" % tuple(map(urllib.quote, (calendar.calendar_id, calendar.color or coulours.next())))
 
-        final_attrs['src'] = src
+        iframe_attrs['src'] = src
 
-        return mark_safe(u'<iframe%s ></iframe>' % flatatt(final_attrs))
+        return mark_safe(u'<iframe%s ></iframe>' % flatatt(iframe_attrs))
 
 @register.tag()
 def embedcalendar(parser, token):

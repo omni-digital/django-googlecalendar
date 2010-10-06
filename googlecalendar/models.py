@@ -1,12 +1,14 @@
 import re
 import urllib
 from django.db import models
+from django.db.models import Q
 import gdata
 import atom
 import datetime
 from django.db.models import Manager
 from utils import parse_date_w3dtf, format_datetime, to_role_uri, from_role_uri
 from django.utils.translation import ugettext_lazy as _
+from django.contrib.sites.models import Site
 
 
 from feincms.models import Base
@@ -192,6 +194,12 @@ class Calendar(models.Model):
 
         super(Calendar, self).save()
 
+
+    @property
+    def upcoming_events(self):
+        now = datetime.datetime.now()
+        return self.event_set.filter(Q(start_time__gte=now) | Q(end_time__gte=now))
+
     @property
     def gCalendar(self):
         if getattr(self, '_gCalendar', None):
@@ -276,6 +284,11 @@ class EventManager(Manager):
 
         return instance
 
+    def upcoming(self):
+        """Current (and upcoming component)"""
+        now = datetime.now()
+        return self.filter(Q(start_time__gte=now) | Q(end_time__get=now))
+
 class Event(Base):
     calendar = models.ForeignKey(Calendar)
     uri = models.CharField(max_length = 255, unique = True, editable=False)
@@ -295,7 +308,7 @@ class Event(Base):
         unique_together = ('calendar', 'slug')
 
     def __unicode__(self):
-        return u'%s (%s - %s)' % (self.title, self.start_time, self.end_time)
+        return u'%s' % (self.title)
 
     @models.permalink
     def get_absolute_url(self):
@@ -305,11 +318,15 @@ class Event(Base):
                 })
 
     def save(self):
+
+        content = self.summary
+        content += """<p><a target="_top" href="%s%s">Full event details</a></p>""" % (Site.objects.get_current().domain, self.get_absolute_url(), )
+
         if self.uri: 
             # existing event, update
             entry = self.calendar.account.service.GetCalendarEventEntry(uri = self.edit_uri)
             entry.title.text = self.title
-            entry.content.text = self.summary
+            entry.content.text = content
             start_time = format_datetime(self.start_time)
             end_time = format_datetime(self.end_time)
             entry.when = []
@@ -318,7 +335,7 @@ class Event(Base):
         else:
             entry = gdata.calendar.CalendarEventEntry()
             entry.title = atom.Title(text = self.title)
-            entry.content = atom.Content(text = self.summary)
+            entry.content = atom.Content(text = content)
             if not self.start_time:
                 self.start_time = datetime.datetime.utcnow()
             if not self.end_time:
