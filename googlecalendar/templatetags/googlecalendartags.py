@@ -5,7 +5,7 @@ from django import template
 from django.forms.util import flatatt
 from django.utils.safestring import mark_safe
 from googlecalendar.utils import request_single_token
-from googlecalendar.models import Calendar
+from googlecalendar.models import Calendar, Event
 
 GOOGLECALENDAR_DEFAULTS = dict(
     # iframe attributes 
@@ -158,4 +158,66 @@ def embedcalendar(parser, token):
         raise template.TemplateSyntaxError('Bad arguments for tag "%s"' % bits[0])
 
     return CalendarNode(*calendars, **dict)
+
+
+class CalendarEventsNode(template.Node):
+    """
+
+    """
+    def __init__(self, calendars=None, limit=None, varname=None):
+        self.calendars = calendars
+        self.limit = limit
+        self.varname = varname
+
+    def render(self, context):
+        calendars = self.calendars and self.calendars.resolve(context)
+        limit = self.limit and self.limit.resolve(context)
+
+
+        events = Event.objects.upcoming()
+
+        if calendars is None:
+            pass
+        elif isinstance(calendars, (str,unicode,)):
+            try:
+                calendars = [Calendar.objects.get(slug=calendars)]
+            except Calendar.DoesNotExist:
+                calendars = None
+
+        elif not getattr(calendars, '__iter__', False):
+            calendars = [calendars]
+
+
+        if calendars is not None:
+            events = events.filter(calendar__in=calendars)
+
+        if limit is not None:
+            events = events[:limit]
+
+        if self.varname is not None:
+            context[self.varname] = events
+            return ''
+        else:
+            t = template.loader.select_template(['googlecalendar/events.html'])
+            context.push()
+            context['calendars'] = calendars
+            context['events'] = events
+            output = t.render(context)
+            context.pop()
+
+            return output
+
+
+@register.tag()
+def calendarevents(parser, token):
+    bits = token.split_contents() 
+
+    if bits[-2] == 'as':
+        varname = bits[-1]
+        args = bits[1:-2]
+    else:
+        args = bits[1:]
+        varname = None
+
+    return CalendarEventsNode(*map(parser.compile_filter, args), varname=varname)
 

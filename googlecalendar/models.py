@@ -286,8 +286,8 @@ class EventManager(Manager):
 
     def upcoming(self):
         """Current (and upcoming component)"""
-        now = datetime.now()
-        return self.filter(Q(start_time__gte=now) | Q(end_time__get=now))
+        now = datetime.datetime.now()
+        return self.filter(Q(start_time__gte=now) | Q(end_time__gte=now))
 
 class Event(Base):
     calendar = models.ForeignKey(Calendar)
