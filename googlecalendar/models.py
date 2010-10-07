@@ -119,7 +119,7 @@ class Calendar(models.Model):
     summary = models.TextField(blank=True, null=True)
     feed_uri = models.CharField(max_length = 255, blank = True, editable=False)
 
-    default_share = models.CharField(_("Share with public"), max_length=31, blank = True, null = True, choices=SHARE_CHOICES)
+    default_share = models.CharField(_("Share with public"), max_length=31, blank = True, null = True, choices=SHARE_CHOICES, default=SHARE_CHOICES[1][0])
 
     objects = CalendarManager()
 
