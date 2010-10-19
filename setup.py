@@ -23,7 +23,7 @@ Distribution({
 setup(
     name = "googlecalendar",
     packages = find_packages(),
-    requires=[
+    install_requires=[
         "gdata",
         "feincms",
     ],
