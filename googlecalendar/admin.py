@@ -2,6 +2,7 @@ from django.contrib import admin
 from django import forms
 from models import *
 from incunafein.admin import editor
+from django.conf import settings
 
 class CalendarAdmin(admin.ModelAdmin):
     list_display = ['title', 'calendar_id', ]
@@ -19,6 +20,12 @@ class EventAdmin(editor.ItemEditor, admin.ModelAdmin):
     prepopulated_fields = {
         'slug': ('title',),
         }
+
+    if hasattr(settings, 'TINYMCE_JS_URL'):
+        # If available add TINYMCE (assumes settings.STATIC_URL+'scripts/tiny_init.js' is present)
+        class Media:
+            js = (settings.TINYMCE_JS_URL, settings.STATIC_URL+'scripts/tiny_init.js',)
+    
 
 admin.site.register(Account)
 admin.site.register(Calendar, CalendarAdmin)
