@@ -198,7 +198,7 @@ class Calendar(models.Model):
     @property
     def upcoming_events(self):
         now = datetime.datetime.now()
-        return self.event_set.filter(Q(start_time__gte=now) | Q(end_time__gte=now))
+        return self.event_set.filter(Q(start_time__gte=now) | Q(end_time__gte=now)).order_by('start_time')
 
     @property
     def gCalendar(self):
@@ -287,7 +287,7 @@ class EventManager(Manager):
     def upcoming(self):
         """Current (and upcoming component)"""
         now = datetime.datetime.now()
-        return self.filter(Q(start_time__gte=now) | Q(end_time__gte=now))
+        return self.filter(Q(start_time__gte=now) | Q(end_time__gte=now)).order_by('start_time')
 
 class Event(Base):
     calendar = models.ForeignKey(Calendar)

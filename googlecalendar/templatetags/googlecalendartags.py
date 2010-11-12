@@ -72,7 +72,7 @@ class CalendarNode(template.Node):
                '#B56414', '#914D14', '#AB2671', '#9643A5', '#4585A3', '#737373', '#41A587', '#D1BC36', '#AD2D2D', ]
 
     @staticmethod
-    def coulours(start = 0):
+    def colours(start = 0):
         """
         Returns a stream of colours, if the end of the list is reached then it starts back at the beginning.
         """
@@ -130,10 +130,10 @@ class CalendarNode(template.Node):
             else:
                 calendar_attrs[key] = value
 
-        coulours = self.coulours()
+        colours = self.colours()
         src = "https://www.google.com/calendar/embed?%s" % ( '&'.join(["%s=%s" % (k, urllib.quote(v)) for k, v in calendar_attrs.items()]) )
         for calendar in calendars:
-            src += "&src=%s&color=%s" % tuple(map(urllib.quote, (calendar.calendar_id, calendar.color or coulours.next())))
+            src += "&src=%s&color=%s" % tuple(map(urllib.quote, (calendar.calendar_id, calendar.color or colours.next())))
 
         iframe_attrs['src'] = src
 
