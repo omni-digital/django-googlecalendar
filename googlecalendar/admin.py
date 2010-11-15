@@ -12,6 +12,7 @@ class CalendarAdmin(admin.ModelAdmin):
         'slug': ('title',),
         }
 
+
 class EventAdmin(editor.ItemEditor, admin.ModelAdmin):
     date_hierarchy = 'start_time'
     list_display = ('__unicode__', 'calendar', 'start_time', 'end_time',)
@@ -20,12 +21,19 @@ class EventAdmin(editor.ItemEditor, admin.ModelAdmin):
     prepopulated_fields = {
         'slug': ('title',),
         }
+    actions = ['delete_selected', ]
 
     if hasattr(settings, 'TINYMCE_JS_URL'):
         # If available add TINYMCE (assumes settings.STATIC_URL+'scripts/tiny_init.js' is present)
         class Media:
             js = (settings.TINYMCE_JS_URL, settings.STATIC_URL+'scripts/tiny_init.js',)
     
+
+    # override the default delete action to ensure that the event in the google calendar is also deleteed 
+    def delete_selected(self, request, queryset):
+        for e in queryset:
+            e.delete()
+    delete_selected.short_description = "Delete selected events!"
 
 admin.site.register(Account)
 admin.site.register(Calendar, CalendarAdmin)
