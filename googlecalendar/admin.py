@@ -22,6 +22,7 @@ class EventAdmin(editor.ItemEditor, admin.ModelAdmin):
         'slug': ('title',),
         }
     actions = ['delete_selected', ]
+    readonly_fields = ['user',]
 
     if hasattr(settings, 'TINYMCE_JS_URL'):
         # If available add TINYMCE (assumes settings.STATIC_URL+'scripts/tiny_init.js' is present)
@@ -34,6 +35,13 @@ class EventAdmin(editor.ItemEditor, admin.ModelAdmin):
         for e in queryset:
             e.delete()
     delete_selected.short_description = "Delete selected events!"
+
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            obj.user = request.user
+            obj.save()
+
 
 admin.site.register(Account)
 admin.site.register(Calendar, CalendarAdmin)

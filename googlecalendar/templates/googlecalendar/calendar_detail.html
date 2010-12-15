@@ -1,6 +1,19 @@
 {% extends "googlecalendar/base.html" %}
 
 {% load i18n pagination_tags googlecalendartags %}
+{% load uni_form_tags %}
+{% block extrascript %}
+    {{ block.super }}
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.7/jquery-ui.min.js"></script>
+    <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.7/themes/smoothness/jquery-ui.css" type="text/css" media="screen" title="no title" charset="utf-8">
+    <script type="text/javascript" charset="utf-8">
+        $(document).ready(function() {
+
+            $("input#id_start_time_0").datepicker({ });
+            $("input#id_end_time_0").datepicker({ });
+        });
+    </script>
+{% endblock %}
 
 {% block content-title %}
     <h2>{{ object }}</h2>
@@ -8,6 +21,12 @@
 
 {% block content-body %}
     {% embedcalendar object %}
+    {% if event_form %}
+        <form action="" method="post" >
+            {{ event_form|as_uni_form }}
+            <input type="submit" value="{%  trans 'Submit' %}">
+        </form>
+    {% endif %}
 {% endblock %}
 
 {% block content-aside %}

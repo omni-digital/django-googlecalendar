@@ -101,7 +101,7 @@ class CalendarNode(template.Node):
 
 
         if not self.calendars:
-            calendars = Calendar.objects.all()
+            calendars = Calendar.objects.active()
         else:
             calendars = []
             def add_calendars(cals):
@@ -109,7 +109,7 @@ class CalendarNode(template.Node):
 
                    if isinstance(cal, basestring):
                        try:
-                           cal = Calendar.objects.get(calendar_id=cal)
+                           cal = Calendar.objects.active().get(calendar_id=cal)
                        except Calendar.DoesNotExist:
                            continue
                    elif getattr(cal, '__iter__', False):#isinstance(cal, (list, tuple)):
@@ -180,7 +180,7 @@ class CalendarEventsNode(template.Node):
             pass
         elif isinstance(calendars, (str,unicode,)):
             try:
-                calendars = [Calendar.objects.get(slug=calendars)]
+                calendars = [Calendar.objects.active().get(slug=calendars)]
             except Calendar.DoesNotExist:
                 calendars = None
 
