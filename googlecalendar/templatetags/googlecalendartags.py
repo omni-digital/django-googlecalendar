@@ -10,7 +10,7 @@ from googlecalendar.models import Calendar, Event
 GOOGLECALENDAR_DEFAULTS = dict(
     # iframe attributes 
     style=" border-width:0 ", 
-    width="100%",
+    width="800",
     height="600", 
     frameborder="0", 
     scrolling="no",
