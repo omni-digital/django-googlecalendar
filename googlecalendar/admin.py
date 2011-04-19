@@ -23,6 +23,7 @@ class EventAdmin(editor.ItemEditor, admin.ModelAdmin):
         }
     actions = ['delete_selected', ]
     readonly_fields = ['user',]
+    verbose_name_plural = 'Events'
 
     if hasattr(settings, 'TINYMCE_JS_URL'):
         # If available add TINYMCE (assumes settings.STATIC_URL+'scripts/tiny_init.js' is present)
