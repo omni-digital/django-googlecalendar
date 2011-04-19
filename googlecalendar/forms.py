@@ -5,7 +5,7 @@ from googlecalendar.models import Event, Calendar
 
 class AddEventForm(forms.ModelForm):
     """ Add event form for calendar_list page """
-    calendar = forms.ModelChoiceField(queryset=Calendar.objects.active())
+    calendar = forms.ModelChoiceField(queryset=Calendar.objects.active)
     start_time = forms.SplitDateTimeField(widget=forms.SplitDateTimeWidget())
     end_time = forms.SplitDateTimeField(widget=forms.SplitDateTimeWidget())
 
