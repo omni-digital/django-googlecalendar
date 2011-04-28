@@ -1,13 +1,14 @@
 from django import forms
 from googlecalendar.models import Event, Calendar
+from django.utils.translation import ugettext_lazy as _
 #from django.forms.extras.widgets import SplitDateTimeWidget
 
 
 class AddEventForm(forms.ModelForm):
     """ Add event form for calendar_list page """
-    calendar = forms.ModelChoiceField(queryset=Calendar.objects.active)
-    start_time = forms.SplitDateTimeField(widget=forms.SplitDateTimeWidget())
-    end_time = forms.SplitDateTimeField(widget=forms.SplitDateTimeWidget())
+    calendar = forms.ModelChoiceField(queryset=Calendar.objects.active())
+    start_time = forms.SplitDateTimeField(widget=forms.SplitDateTimeWidget(), label=_('Start date and time'))
+    end_time = forms.SplitDateTimeField(widget=forms.SplitDateTimeWidget(), label=_('End date and time'))
 
 
     def clean_end_time(self):
