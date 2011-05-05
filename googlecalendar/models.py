@@ -111,7 +111,10 @@ class CalendarManager(Manager):
         current_site = Site.objects.get_current()
         return super(CalendarManager, self).get_query_set().filter(sites=current_site)
 
-    
+class ActiveManager(CalendarManager):
+    def get_query_set(self):
+        return self.active()
+
 
 class Calendar(models.Model):
     SHARE_CHOICES = ( 
@@ -134,6 +137,8 @@ class Calendar(models.Model):
     sites = models.ManyToManyField(Site)
 
     objects = CalendarManager()
+    active = ActiveManager()
+
 
     def __unicode__(self):
         return self.title
