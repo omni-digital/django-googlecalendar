@@ -6,9 +6,10 @@ from django.utils.translation import ugettext_lazy as _
 
 class AddEventForm(forms.ModelForm):
     """ Add event form for calendar_list page """
-    calendar = forms.ModelChoiceField(queryset=Calendar.objects.active())
+    calendar = forms.ModelChoiceField(queryset=Calendar.active)
     start_time = forms.SplitDateTimeField(widget=forms.SplitDateTimeWidget(), label=_('Start date and time'))
     end_time = forms.SplitDateTimeField(widget=forms.SplitDateTimeWidget(), label=_('End date and time'))
+
 
 
     def clean_end_time(self):
