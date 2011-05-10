@@ -6,13 +6,18 @@ from googlecalendar.forms import AddEventForm, AddEventCalendarForm
 from django.contrib import messages
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.sites.models import Site
+from django.http import HttpResponseNotFound, Http404
 
 
 def googlecalendar_list(request, extra_context=None):
     context = RequestContext(request)
 
     if extra_context is not None:
-        contect.update(extra_context)
+        context.update(extra_context)
+
+    calendars = Calendar.active.all()
+    if not len(calendars):
+        raise Http404
 
     event_form = None
     if settings.USER_ADD_EVENTS:
@@ -30,7 +35,7 @@ def googlecalendar_list(request, extra_context=None):
                 messages.add_message(request, messages.INFO, _("New event was successfully saved"))
 
     context.update({
-        'object_list': Calendar.objects.active(),
+        'object_list': Calendar.active.all(),
         'event_form' : event_form,
     })
     
@@ -40,7 +45,7 @@ def googlecalendar_list(request, extra_context=None):
 def googlecalendar(request, calendar, extra_context=None):
     context = RequestContext(request)
 
-    calendar = get_object_or_404(Calendar.objects.active(), slug=calendar)
+    calendar = get_object_or_404(Calendar.active, slug=calendar)
 
     if extra_context is not None:
         context.update(extra_context)
