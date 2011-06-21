@@ -13,8 +13,8 @@ def googlecalendar_list(request, extra_context=None, template_name='googlecalend
     if extra_context is not None:
         context.update(extra_context)
 
-    calendars = Calendar.active.all()
-    if not len(calendars):
+    active_calendars = Calendar.active.all()
+    if not active_calendars:
         raise Http404
 
     event_form = None
@@ -32,7 +32,7 @@ def googlecalendar_list(request, extra_context=None, template_name='googlecalend
                 event_form = AddEventForm()
                 messages.add_message(request, messages.INFO, _('New event was successfully saved'))
 
-    context.update({'object_list': Calendar.active.all(), 'event_form': event_form})
+    context.update({'object_list': active_calendars, 'event_form': event_form})
     return render_to_response(template_name, context)
 
 def googlecalendar(request, slug, extra_context=None, template_name='googlecalendar/calendar_detail.html'):
