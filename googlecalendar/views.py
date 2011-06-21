@@ -74,7 +74,7 @@ def googlecalendar_event(request, calendar, event, extra_context=None):
     event = get_object_or_404(Event.objects.active(), slug=event)
 
     if extra_context is not None:
-        contect.update(extra_context)
+        context.update(extra_context)
 
     context.update({
         'object': event,
