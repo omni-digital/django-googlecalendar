@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib import messages
-from django.http import Http404
+from django.http import HttpResponseRedirect
+from django.core.mail import mail_admins
 from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 from django.utils.translation import ugettext_lazy as _
@@ -15,7 +16,11 @@ def googlecalendar_list(request, extra_context=None, template_name='googlecalend
 
     active_calendars = Calendar.active.all()
     if not active_calendars:
-        raise Http404
+        subject = '%s Missing Calendars' % settings.EMAIL_SUBJECT_PREFIX
+        message = 'There are no calendars currently associated with %s' % settings.SITE_NAME
+        mail_admins(subject, message)
+        messages.add_message(request, messages.INFO, _('An error has occurred with the calendars.'))
+        return HttpResponseRedirect('/')
 
     event_form = None
     if settings.USER_ADD_EVENTS:
