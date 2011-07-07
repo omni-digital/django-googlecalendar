@@ -1,46 +1,71 @@
-from django.template import RequestContext
+from django.conf import settings
+from django.contrib import messages
+from django.http import HttpResponseRedirect
+from django.core.mail import mail_admins
 from django.shortcuts import get_object_or_404, render_to_response
-from models import Event, Calendar
+from django.template import RequestContext
+from django.utils.translation import ugettext_lazy as _
 
-def googlecalendar_list(request, extra_context=None):
+from forms import AddEventForm, AddEventCalendarForm
+from models import Calendar, Event
+
+def googlecalendar_list(request, extra_context=None, template_name='googlecalendar/calendar_list.html'):
     context = RequestContext(request)
-
     if extra_context is not None:
-        contect.update(extra_context)
+        context.update(extra_context)
 
-    context.update({
-        'object_list': Calendar.objects.all(),
-    })
-    
-    return render_to_response('googlecalendar/calendar_list.html', context)
-    
+    active_calendars = Calendar.active.all()
+    if not active_calendars:
+        subject = '%s Missing Calendars' % settings.EMAIL_SUBJECT_PREFIX
+        message = 'There are no calendars currently associated with %s' % settings.SITE_NAME
+        mail_admins(subject, message)
+        messages.add_message(request, messages.INFO, _('An error has occurred with the calendars.'))
+        return HttpResponseRedirect('/')
 
-def googlecalendar(request, calendar, extra_context=None):
+    event_form = None
+    if settings.USER_ADD_EVENTS:
+        event_form = AddEventForm()
+
+        if request.method == 'POST':
+            event_form = AddEventForm(request.POST)
+            if event_form.is_valid():
+                event = event_form.save(commit=False)
+                if request.user.is_authenticated():
+                    event.user = request.user
+                event.save()
+
+                event_form = AddEventForm()
+                messages.add_message(request, messages.INFO, _('New event was successfully saved'))
+
+    context.update({'object_list': active_calendars, 'event_form': event_form})
+    return render_to_response(template_name, context)
+
+def googlecalendar(request, slug, extra_context=None, template_name='googlecalendar/calendar_detail.html'):
     context = RequestContext(request)
-
-    calendar = get_object_or_404(Calendar, slug=calendar)
-
     if extra_context is not None:
-        contect.update(extra_context)
+        context.update(extra_context)
 
-    context.update({
-        'object': calendar,
-    })
-    
-    return render_to_response('googlecalendar/calendar_detail.html', context)
+    calendar = get_object_or_404(Calendar.active, slug=slug)
 
+    event_form = None
+    if settings.USER_ADD_EVENTS:
+        event_form = AddEventCalendarForm(calendar=calendar)
 
-def googlecalendar_event(request, calendar, event, extra_context=None):
+        if request.method == 'POST':
+            event_form = AddEventCalendarForm(request.POST, calendar=calendar)
+            if event_form.is_valid():
+                event_form.save()
+                event_form = AddEventCalendarForm(calendar=calendar)
+                messages.add_message(request, messages.INFO, _('New event was successfully saved'))
+
+    context.update({'object': calendar, 'event_form' : event_form})
+    return render_to_response(template_name, context)
+
+def googlecalendar_event(request, calendar, event, extra_context=None, template_name='googlecalendar/event_detail.html'):
     context = RequestContext(request)
-
-    event = get_object_or_404(Event, slug=event)
-
     if extra_context is not None:
-        contect.update(extra_context)
+        context.update(extra_context)
 
-    context.update({
-        'object': event,
-    })
-    
-    return render_to_response('googlecalendar/event_detail.html', context)
+    context.update({'object': get_object_or_404(Event.objects.active(), slug=event)})
+    return render_to_response(template_name, context)
 

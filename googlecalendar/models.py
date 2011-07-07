@@ -16,6 +16,8 @@ from feincms.content.medialibrary.models import MediaFileContent
 from feincms.content.richtext.models import RichTextContent
 
 import mptt
+from incuna.db.models.AutoSlugField import AutoSlugField
+from django.contrib.auth.models import User
 
 VERSION = '0.3'
 
@@ -103,6 +105,17 @@ class CalendarManager(Manager):
 
         return instance
 
+
+    def active(self):
+        " Returns calendars available for current site only."
+        current_site = Site.objects.get_current()
+        return super(CalendarManager, self).get_query_set().filter(sites=current_site)
+
+class ActiveManager(CalendarManager):
+    def get_query_set(self):
+        return self.active()
+
+
 class Calendar(models.Model):
     SHARE_CHOICES = ( 
         ('freebusy', _('See only free / busy (hide details)')),
@@ -121,7 +134,11 @@ class Calendar(models.Model):
 
     default_share = models.CharField(_("Share with public"), max_length=31, blank = True, null = True, choices=SHARE_CHOICES, default=SHARE_CHOICES[1][0])
 
+    sites = models.ManyToManyField(Site)
+
     objects = CalendarManager()
+    active = ActiveManager()
+
 
     def __unicode__(self):
         return self.title
@@ -287,18 +304,29 @@ class EventManager(Manager):
     def upcoming(self):
         """Current (and upcoming component)"""
         now = datetime.datetime.now()
-        return self.filter(Q(start_time__gte=now) | Q(end_time__gte=now)).order_by('start_time')
+        return self.active().filter(Q(start_time__gte=now) | Q(end_time__gte=now)).order_by('start_time')
+
+
+    def active(self):
+        " Returns events for those calendars that available for current site only."
+        current_site = Site.objects.get_current()
+        return super(EventManager, self).get_query_set().filter(calendar__sites=current_site)
+
 
 class Event(Base):
     calendar = models.ForeignKey(Calendar)
     uri = models.CharField(max_length = 255, unique = True, editable=False)
     title = models.CharField(max_length = 255)
-    slug = models.SlugField(max_length = 255, help_text=_('This will be automatically generated from the  title'))
+    slug = AutoSlugField(max_length = 255, populate_from='title', editable=True, help_text=_('This will be automatically generated from the  title'))
     edit_uri = models.CharField(max_length = 255, editable=False)
     view_uri = models.CharField(max_length = 255, editable=False)
     summary = models.TextField(blank = True)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
+
+    user = models.ForeignKey(User, null=True)
+    add_date = models.DateTimeField(_('Date added'), auto_now_add=True)
+    is_active = models.BooleanField(_('active'), default=True, )
 
     objects = EventManager()
 
@@ -318,6 +346,8 @@ class Event(Base):
                 })
 
     def save(self):
+
+        self._meta.get_field('slug').pre_save(self, not self.pk)
 
         content = self.summary
         content += """<p><a target="_top" href="%s%s">Full event details</a></p>""" % (Site.objects.get_current().domain, self.get_absolute_url(), )
@@ -351,9 +381,13 @@ class Event(Base):
         super(Event, self).save()
 
     def delete(self):
-        if self.uri: 
-            # existing event, delete
-            self.calendar.account.service.DeleteEvent(self.edit_uri)
+        if self.uri:
+            try:
+                # existing event, delete
+                self.calendar.account.service.DeleteEvent(self.edit_uri)
+            except gdata.service.RequestError, e:
+                if e.args[0]['status'] != 404:
+                    raise
         super(Event, self).delete()
 
 Event.register_regions(
