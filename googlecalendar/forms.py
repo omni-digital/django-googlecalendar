@@ -7,7 +7,7 @@ from django.utils.translation import ugettext_lazy as _
 from googlecalendar.models import Event, Calendar
 
 def get_current_time():
-    return localize_input(datetime.now())
+    return localize_input(datetime.now().strftime('%Y-%m-%d %I:%M'))
 
 class AddEventForm(forms.ModelForm):
     """ Add event form for calendar_list page """
