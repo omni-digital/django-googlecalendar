@@ -117,7 +117,7 @@ class ActiveManager(CalendarManager):
 
 
 class Calendar(models.Model):
-    SHARE_CHOICES = ( 
+    SHARE_CHOICES = (
         ('freebusy', _('See only free / busy (hide details)')),
         ('read', _('See all event details')),
     )
@@ -151,7 +151,7 @@ class Calendar(models.Model):
 
     def save(self):
         gcal = self.gCalendar
-        if gcal: 
+        if gcal:
             # existing calendar update
             new = False
         else:
@@ -352,7 +352,7 @@ class Event(Base):
         content = self.summary
         content += """<p><a target="_top" href="%s%s">Full event details</a></p>""" % (Site.objects.get_current().domain, self.get_absolute_url(), )
 
-        if self.uri: 
+        if self.uri:
             # existing event, update
             entry = self.calendar.account.service.GetCalendarEventEntry(uri = self.edit_uri)
             entry.title.text = self.title
