@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib import messages
+from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.core.mail import mail_admins
 from django.shortcuts import get_object_or_404, render_to_response
@@ -36,6 +37,7 @@ def googlecalendar_list(request, extra_context=None, template_name='googlecalend
 
                 event_form = AddEventForm()
                 messages.add_message(request, messages.INFO, _('New event was successfully saved'))
+                return HttpResponseRedirect(reverse('googlecalendar'))
 
     context.update({'object_list': active_calendars, 'event_form': event_form})
     return render_to_response(template_name, context)
