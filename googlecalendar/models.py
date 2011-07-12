@@ -341,7 +341,7 @@ class Event(Base):
     @models.permalink
     def get_absolute_url(self):
         return ('googlecalendar_event', (), {
-                'calendar': self.calendar.slug,
+                'slug': self.calendar.slug,
                 'event': self.slug,
                 })
 
