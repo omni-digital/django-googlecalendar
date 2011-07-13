@@ -17,7 +17,7 @@ def googlecalendar_list(request, extra_context=None, template_name='googlecalend
 
     active_calendars = Calendar.active.all()
     if not active_calendars:
-        subject = '%s Missing Calendars' % settings.EMAIL_SUBJECT_PREFIX
+        subject = 'Missing Calendars'
         message = 'There are no calendars currently associated with %s' % settings.SITE_NAME
         mail_admins(subject, message)
         messages.add_message(request, messages.INFO, _('An error has occurred with the calendars.'))
