@@ -27,7 +27,7 @@ setup(
         "gdata",
         "FeinCMS",
     ],
-    version = "0.1",
+    version = "1.2",
     description = "This project implements Google Calendar API as django objects.",
     author = "Incuna Ltd",
     author_email = "admin@incuna.com",
