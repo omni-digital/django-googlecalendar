@@ -20,6 +20,7 @@ Distribution({
     "setup_requires": add_django_dependency and  ['Django >=1.1.1'] or []
 })
 
+from $python_name import get_version
 setup(
     name = "googlecalendar",
     packages = find_packages(),
@@ -27,7 +28,7 @@ setup(
         "gdata",
         "FeinCMS",
     ],
-    version = "1.2",
+    version = get_version(),
     description = "This project implements Google Calendar API as django objects.",
     author = "Incuna Ltd",
     author_email = "admin@incuna.com",
