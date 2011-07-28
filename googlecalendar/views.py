@@ -24,7 +24,7 @@ def googlecalendar_list(request, extra_context=None, template_name='googlecalend
         return HttpResponseRedirect('/')
 
     event_form = None
-    if settings.USER_ADD_EVENTS:
+    if hasattr(settings, 'USER_ADD_EVENTS') and settings.USER_ADD_EVENTS:
         event_form = AddEventForm()
 
         if request.method == 'POST':
@@ -50,7 +50,7 @@ def googlecalendar(request, slug, extra_context=None, template_name='googlecalen
     calendar = get_object_or_404(Calendar.active, slug=slug)
 
     event_form = None
-    if settings.USER_ADD_EVENTS:
+    if hasattr(settings, 'USER_ADD_EVENTS') and settings.USER_ADD_EVENTS:
         event_form = AddEventCalendarForm(calendar=calendar)
 
         if request.method == 'POST':
