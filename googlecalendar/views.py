@@ -63,11 +63,11 @@ def googlecalendar(request, slug, extra_context=None, template_name='googlecalen
     context.update({'object': calendar, 'event_form' : event_form})
     return render_to_response(template_name, context)
 
-def googlecalendar_event(request, calendar, event, extra_context=None, template_name='googlecalendar/event_detail.html'):
+def googlecalendar_event(request, slug, event, extra_context=None, template_name='googlecalendar/event_detail.html'):
     context = RequestContext(request)
     if extra_context is not None:
         context.update(extra_context)
 
-    context.update({'object': get_object_or_404(Event.objects.active(), slug=event)})
+    context.update({'object': get_object_or_404(Event.objects.active(), slug=event, calendar__slug=slug)})
     return render_to_response(template_name, context)
 
