@@ -310,7 +310,7 @@ class EventManager(Manager):
     def active(self):
         " Returns events for those calendars that available for current site only."
         current_site = Site.objects.get_current()
-        return super(EventManager, self).get_query_set().filter(calendar__sites=current_site)
+        return super(EventManager, self).get_query_set().filter(calendar__sites=current_site, is_active=True)
 
 
 class Event(Base):
