@@ -38,12 +38,6 @@ class EventAdmin(editor.ItemEditor, admin.ModelAdmin):
     delete_selected.short_description = "Delete selected events!"
 
 
-    def save_model(self, request, obj, form, change):
-        if not change:
-            obj.user = request.user
-            obj.save()
-
-
 admin.site.register(Account)
 admin.site.register(Calendar, CalendarAdmin)
 admin.site.register(Event, EventAdmin)
