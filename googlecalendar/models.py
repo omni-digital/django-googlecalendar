@@ -389,11 +389,3 @@ class Event(Base):
                 if e.args[0]['status'] != 404:
                     raise
         super(Event, self).delete()
-
-Event.register_regions(
-    ('main', _('Main region')),
-    )
-Event.create_content_type(RichTextContent)
-Event.create_content_type(MediaFileContent, POSITION_CHOICES=(('default', _('Default')),))
-
-
