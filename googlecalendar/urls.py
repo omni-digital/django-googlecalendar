@@ -1,4 +1,4 @@
-from django.conf.urls.defaults import patterns, url
+from django.conf.urls import patterns, url
 
 urlpatterns = patterns('googlecalendar.views',
     url(r'^(?P<slug>[a-z0-9_-]+)/(?P<event>[a-z0-9_-]+)$', 'googlecalendar_event', name='googlecalendar_event'),
