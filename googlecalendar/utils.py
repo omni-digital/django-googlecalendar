@@ -2,7 +2,7 @@ import re
 import time
 import datetime
 import gdata.calendar.service
-from django.utils.tzinfo import FixedOffset, LocalTimezone
+from django.utils.timezone import FixedOffset, LocalTimezone
 
 DATE_FORMAT = '%Y-%m-%dT%H:%M:%S.000Z'
 ROLE_URI_ROOT = 'http://schemas.google.com/gCal/2005#'
@@ -139,4 +139,3 @@ def list_cals(account):
         print '--- EVENTS:'
         for e in c.get_events():
             print e
-
