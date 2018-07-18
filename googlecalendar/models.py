@@ -12,7 +12,7 @@ from django.contrib.sites.models import Site
 
 
 from feincms.models import Base
-from feincms.module.medialibrary.models import MediaFileContent
+from feincms.module.medialibrary.contents import MediaFileContent
 from feincms.content.richtext.models import RichTextContent
 
 import mptt
