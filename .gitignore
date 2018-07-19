@@ -1,0 +1,4 @@
+dist
+django_googlecalendar.egg-info
+*.pyc
+__pycache__
