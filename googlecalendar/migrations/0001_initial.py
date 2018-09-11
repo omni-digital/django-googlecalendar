@@ -40,7 +40,7 @@ class Migration(SchemaMigration):
             ('calendar', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['googlecalendar.Calendar'])),
             ('uri', self.gf('django.db.models.fields.CharField')(unique=True, max_length=255)),
             ('title', self.gf('django.db.models.fields.CharField')(max_length=255)),
-            ('slug', self.gf('incuna.db.models.AutoSlugField.AutoSlugField')(db_index=True, max_length=255, populate_from='title', field_separator=u'-')),
+            ('slug', self.gf('incuna.db.models.AutoSlugField.AutoSlugField')(db_index=True, max_length=255, populate_from='title', field_separator='-')),
             ('edit_uri', self.gf('django.db.models.fields.CharField')(max_length=255)),
             ('view_uri', self.gf('django.db.models.fields.CharField')(max_length=255)),
             ('summary', self.gf('django.db.models.fields.TextField')(blank=True)),

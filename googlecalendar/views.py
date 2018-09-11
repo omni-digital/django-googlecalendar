@@ -7,8 +7,8 @@ from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 from django.utils.translation import ugettext_lazy as _
 
-from forms import AddEventForm, AddEventCalendarForm
-from models import Calendar, Event
+from .forms import AddEventForm, AddEventCalendarForm
+from .models import Calendar, Event
 
 def googlecalendar_list(request, extra_context=None, template_name='googlecalendar/calendar_list.html'):
     context = RequestContext(request)

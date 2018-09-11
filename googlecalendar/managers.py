@@ -1,5 +1,5 @@
 from django.db.models import Manager
-from utils import parse_date_w3dtf
+from .utils import parse_date_w3dtf
 
 class CalendarManager(Manager):
     def get_or_create(self, account, data):

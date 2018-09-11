@@ -135,7 +135,7 @@ def upgrade_token(token):
 def list_cals(account):
     cals = account.get_own_calendars()
     for c in cals:
-        print c
-        print '--- EVENTS:'
+        print(c)
+        print('--- EVENTS:')
         for e in c.get_events():
-            print e
+            print(e)

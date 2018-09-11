@@ -1,4 +1,4 @@
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import itertools
 from django.conf import settings
 from django import template 
@@ -92,7 +92,7 @@ class CalendarNode(template.Node):
 
         iframe_attrs = {}
         calendar_attrs = {}
-        for key, value in GOOGLECALENDAR_DEFAULTS.items():
+        for key, value in list(GOOGLECALENDAR_DEFAULTS.items()):
             if key in IFRAME_ATTRS:
                 iframe_attrs[key] = value
             else:
@@ -107,7 +107,7 @@ class CalendarNode(template.Node):
             def add_calendars(cals):
                for cal in cals:
 
-                   if isinstance(cal, basestring):
+                   if isinstance(cal, str):
                        try:
                            cal = Calendar.objects.active().get(calendar_id=cal)
                        except Calendar.DoesNotExist:
@@ -131,13 +131,13 @@ class CalendarNode(template.Node):
                 calendar_attrs[key] = value
 
         colours = self.colours()
-        src = "https://www.google.com/calendar/embed?%s" % ( '&'.join(["%s=%s" % (k, urllib.quote(v)) for k, v in calendar_attrs.items()]) )
+        src = "https://www.google.com/calendar/embed?%s" % ( '&'.join(["%s=%s" % (k, urllib.parse.quote(v)) for k, v in list(calendar_attrs.items())]) )
         for calendar in calendars:
-            src += "&src=%s&color=%s" % tuple(map(urllib.quote, (calendar.calendar_id, calendar.color or colours.next())))
+            src += "&src=%s&color=%s" % tuple(map(urllib.parse.quote, (calendar.calendar_id, calendar.color or next(colours))))
 
         iframe_attrs['src'] = src
 
-        return mark_safe(u'<iframe%s ></iframe>' % flatatt(iframe_attrs))
+        return mark_safe('<iframe%s ></iframe>' % flatatt(iframe_attrs))
 
 @register.tag()
 def embedcalendar(parser, token):
@@ -178,7 +178,7 @@ class CalendarEventsNode(template.Node):
 
         if calendars is None:
             pass
-        elif isinstance(calendars, (str,unicode,)):
+        elif isinstance(calendars, str):
             try:
                 calendars = [Calendar.objects.active().get(slug=calendars)]
             except Calendar.DoesNotExist:
@@ -219,5 +219,5 @@ def calendarevents(parser, token):
         args = bits[1:]
         varname = None
 
-    return CalendarEventsNode(*map(parser.compile_filter, args), varname=varname)
+    return CalendarEventsNode(*list(map(parser.compile_filter, args)), varname=varname)
 
