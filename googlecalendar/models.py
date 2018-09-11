@@ -1,12 +1,12 @@
 import re
-import urllib
+import urllib.request, urllib.parse, urllib.error
 from django.db import models
 from django.db.models import Q
 import gdata
 import atom
 import datetime
 from django.db.models import Manager
-from utils import parse_date_w3dtf, format_datetime, to_role_uri, from_role_uri
+from .utils import parse_date_w3dtf, format_datetime, to_role_uri, from_role_uri
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.sites.models import Site
 
@@ -33,7 +33,7 @@ def with_request_error_try(function, attempts=3):
     while True:
         try:
             return function()
-        except gdata.service.RequestError, e:
+        except gdata.service.RequestError as e:
             attempts -= 1
             if attempts == 0:
                 raise
@@ -48,13 +48,13 @@ class Account(models.Model):
 
     def __unicode__(self):
         if self.email:
-            return u'Account for %s' % self.email
+            return 'Account for %s' % self.email
         else:
-            return u'Account with token'
+            return 'Account with token'
 
     @property
     def service(self):
-        if not _services.has_key(self.email):
+        if self.email not in _services:
             _service = gdata.calendar.service.CalendarService()
             _service.source = 'ITSLtd-Django_Google-%s' % VERSION
             if self.token:
@@ -191,7 +191,7 @@ class Calendar(models.Model):
 
         m = re_cal_id.match(self.uri)
         if m:
-            self.calendar_id = urllib.unquote(m.group(1))
+            self.calendar_id = urllib.parse.unquote(m.group(1))
 
         # ACL model
         rule = self.getAclRule('default')
@@ -238,7 +238,7 @@ class Calendar(models.Model):
         try:
             #try to get the entry
             return self.account.service.GetCalendarAclEntry('%s/%s' % (aclink.href, scope_type))
-        except gdata.service.RequestError, e:
+        except gdata.service.RequestError as e:
             if e.args[0]['reason'] != 'Not Found':
                 raise
             return None
@@ -336,7 +336,7 @@ class Event(Base):
         unique_together = ('calendar', 'slug')
 
     def __unicode__(self):
-        return u'%s' % (self.title)
+        return '%s' % (self.title)
 
     @models.permalink
     def get_absolute_url(self):
@@ -385,7 +385,7 @@ class Event(Base):
             try:
                 # existing event, delete
                 self.calendar.account.service.DeleteEvent(self.edit_uri)
-            except gdata.service.RequestError, e:
+            except gdata.service.RequestError as e:
                 if e.args[0]['status'] != 404:
                     raise
         super(Event, self).delete()
