@@ -1,25 +1,25 @@
 import urllib.request, urllib.parse, urllib.error
 import itertools
 from django.conf import settings
-from django import template 
-from django.forms.util import flatatt
+from django import template
+from django.forms.utils import flatatt
 from django.utils.safestring import mark_safe
 from googlecalendar.utils import request_single_token
 from googlecalendar.models import Calendar, Event
 
 GOOGLECALENDAR_DEFAULTS = dict(
-    # iframe attributes 
-    style=" border-width:0 ", 
+    # iframe attributes
+    style=" border-width:0 ",
     width="800",
-    height="600", 
-    frameborder="0", 
+    height="600",
+    frameborder="0",
     scrolling="no",
     # Calender attributes
-    showTitle="0", 
-    showCalendars="1", 
-    showTz="0", 
-    wkst="1", 
-    bgcolor="#FFFFFF", 
+    showTitle="0",
+    showCalendars="1",
+    showTz="0",
+    wkst="1",
+    bgcolor="#FFFFFF",
     ctz="Europe/London")
 
 IFRAME_ATTRS = (
@@ -141,7 +141,7 @@ class CalendarNode(template.Node):
 
 @register.tag()
 def embedcalendar(parser, token):
-    bits = token.split_contents() 
+    bits = token.split_contents()
 
     calendars = []
     dict = {}
@@ -210,7 +210,7 @@ class CalendarEventsNode(template.Node):
 
 @register.tag()
 def calendarevents(parser, token):
-    bits = token.split_contents() 
+    bits = token.split_contents()
 
     if bits[-2] == 'as':
         varname = bits[-1]
@@ -220,4 +220,3 @@ def calendarevents(parser, token):
         varname = None
 
     return CalendarEventsNode(*list(map(parser.compile_filter, args)), varname=varname)
-
