@@ -2,7 +2,7 @@ import re
 import time
 import datetime
 import gdata.calendar.service
-from django.utils.timezone import FixedOffset, LocalTimezone
+from django.utils.timezone import FixedOffset, get_default_timezone
 
 DATE_FORMAT = '%Y-%m-%dT%H:%M:%S.000Z'
 ROLE_URI_ROOT = 'http://schemas.google.com/gCal/2005#'
@@ -12,7 +12,7 @@ def format_datetime(date):
     A utility method that converts the datetime to UTC serialized
     for Google Calendar.
     """
-    local = date.replace(tzinfo=LocalTimezone(date))
+    local = date.replace(tzinfo=get_default_timezone(date))
     return local.astimezone(FixedOffset(0)).strftime(DATE_FORMAT)
 
 def to_role_uri(role):
