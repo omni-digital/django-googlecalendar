@@ -1,11 +1,18 @@
-import urllib.request, urllib.parse, urllib.error
 import itertools
+
+try:
+    from urllib.parse import quote
+except ImportError:
+    from urllib import quote
+
 from django.conf import settings
 from django import template
 from django.forms.utils import flatatt
 from django.utils.safestring import mark_safe
+
 from googlecalendar.utils import request_single_token
 from googlecalendar.models import Calendar, Event
+
 
 GOOGLECALENDAR_DEFAULTS = dict(
     # iframe attributes
@@ -131,9 +138,11 @@ class CalendarNode(template.Node):
                 calendar_attrs[key] = value
 
         colours = self.colours()
-        src = "https://www.google.com/calendar/embed?%s" % ( '&'.join(["%s=%s" % (k, urllib.parse.quote(v)) for k, v in list(calendar_attrs.items())]) )
+        src = "https://www.google.com/calendar/embed?%s" % ( '&'.join(
+            ["%s=%s" % (k, quote(v)) for k, v in calendar_attrs.items()])
+        )
         for calendar in calendars:
-            src += "&src=%s&color=%s" % tuple(map(urllib.parse.quote, (calendar.calendar_id, calendar.color or next(colours))))
+            src += "&src=%s&color=%s" % tuple(map(quote, (calendar.calendar_id, calendar.color or next(colours))))
 
         iframe_attrs['src'] = src
 
@@ -219,4 +228,4 @@ def calendarevents(parser, token):
         args = bits[1:]
         varname = None
 
-    return CalendarEventsNode(*list(map(parser.compile_filter, args)), varname=varname)
+    return CalendarEventsNode(*map(parser.compile_filter, args), varname=varname)

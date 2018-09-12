@@ -7,8 +7,9 @@ from django.shortcuts import get_object_or_404, render_to_response
 from django.template import RequestContext
 from django.utils.translation import ugettext_lazy as _
 
-from .forms import AddEventForm, AddEventCalendarForm
-from .models import Calendar, Event
+from googlecalendar.forms import AddEventForm, AddEventCalendarForm
+from googlecalendar.models import Calendar, Event
+
 
 def googlecalendar_list(request, extra_context=None, template_name='googlecalendar/calendar_list.html'):
     context = RequestContext(request)
@@ -70,4 +71,3 @@ def googlecalendar_event(request, slug, event, extra_context=None, template_name
 
     context.update({'object': get_object_or_404(Event.objects.active(), slug=event, calendar__slug=slug)})
     return render_to_response(template_name, context)
-

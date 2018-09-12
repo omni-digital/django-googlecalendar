@@ -1,23 +1,27 @@
-import re
-import urllib.request, urllib.parse, urllib.error
-from django.db import models
-from django.db.models import Q
-import gdata
 import atom
 import datetime
-from django.db.models import Manager
-from .utils import parse_date_w3dtf, format_datetime, to_role_uri, from_role_uri
-from django.utils.translation import ugettext_lazy as _
+import gdata
+import re
+
+try:
+    from urllib.parse import unquote
+except ImportError:
+    from urllib import unquote
+
+import mptt
 from django.contrib.sites.models import Site
-
-
+from django.contrib.auth.models import User
+from django.db import models
+from django.db.models import Q
+from django.db.models import Manager
+from django.utils.translation import ugettext_lazy as _
 from feincms.models import Base
 from feincms.module.medialibrary.contents import MediaFileContent
 from feincms.content.richtext.models import RichTextContent
-
-import mptt
 from incuna.db.models.AutoSlugField import AutoSlugField
-from django.contrib.auth.models import User
+
+from googlecalendar.utils import parse_date_w3dtf, format_datetime, to_role_uri, from_role_uri
+
 
 VERSION = '0.3'
 
@@ -191,7 +195,7 @@ class Calendar(models.Model):
 
         m = re_cal_id.match(self.uri)
         if m:
-            self.calendar_id = urllib.parse.unquote(m.group(1))
+            self.calendar_id = unquote(m.group(1))
 
         # ACL model
         rule = self.getAclRule('default')
