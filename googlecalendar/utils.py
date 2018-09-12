@@ -7,6 +7,7 @@ from django.utils.timezone import FixedOffset, get_default_timezone
 DATE_FORMAT = '%Y-%m-%dT%H:%M:%S.000Z'
 ROLE_URI_ROOT = 'http://schemas.google.com/gCal/2005#'
 
+
 def format_datetime(date):
     """
     A utility method that converts the datetime to UTC serialized
@@ -15,8 +16,10 @@ def format_datetime(date):
     local = date.replace(tzinfo=get_default_timezone(date))
     return local.astimezone(FixedOffset(0)).strftime(DATE_FORMAT)
 
+
 def to_role_uri(role):
     return '%s%s' % (ROLE_URI_ROOT, role, )
+
 
 def from_role_uri(role):
     return role.replace(ROLE_URI_ROOT, '')
@@ -63,6 +66,7 @@ def parse_date_w3dtf(dateString):
             else:
                 day = 1
         return year, month, day
+
     def __extract_time(m):
         if not m:
             return 0, 0, 0
