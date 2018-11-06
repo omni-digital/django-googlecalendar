@@ -150,7 +150,7 @@ class Calendar(models.Model):
     @models.permalink
     def get_absolute_url(self):
         return ('googlecalendar_detail', (), {
-                'calendar': self.slug,
+                'slug': self.slug,
                 })
 
     def save(self):

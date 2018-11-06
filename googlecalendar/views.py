@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from django.core.mail import mail_admins
-from django.shortcuts import get_object_or_404, render_to_response
+from django.shortcuts import get_object_or_404, render_to_response, render
 from django.template import RequestContext
 from django.utils.translation import ugettext_lazy as _
 
@@ -12,7 +12,7 @@ from googlecalendar.models import Calendar, Event
 
 
 def googlecalendar_list(request, extra_context=None, template_name='googlecalendar/calendar_list.html'):
-    context = RequestContext(request)
+    context = {'request': request}
     if extra_context is not None:
         context.update(extra_context)
 
@@ -41,10 +41,11 @@ def googlecalendar_list(request, extra_context=None, template_name='googlecalend
                 return HttpResponseRedirect(reverse('googlecalendar'))
 
     context.update({'object_list': active_calendars, 'event_form': event_form})
-    return render_to_response(template_name, context)
+    return render(request, template_name, context=context)
+
 
 def googlecalendar(request, slug, extra_context=None, template_name='googlecalendar/calendar_detail.html'):
-    context = RequestContext(request)
+    context = {'request': request}
     if extra_context is not None:
         context.update(extra_context)
 
@@ -62,7 +63,8 @@ def googlecalendar(request, slug, extra_context=None, template_name='googlecalen
                 messages.add_message(request, messages.INFO, _('New event was successfully saved'))
 
     context.update({'object': calendar, 'event_form' : event_form})
-    return render_to_response(template_name, context)
+    return render(request, template_name, context=context)
+
 
 def googlecalendar_event(request, slug, event, extra_context=None, template_name='googlecalendar/event_detail.html'):
     context = RequestContext(request)
