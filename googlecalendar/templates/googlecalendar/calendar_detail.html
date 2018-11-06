@@ -1,7 +1,7 @@
 {% extends "googlecalendar/base.html" %}
 
-{% load i18n pagination_tags googlecalendartags %}
-{% load uni_form_tags %}
+{% crispy_forms_tags load i18n pagination_tags googlecalendartags %}
+
 {% block extrascript %}
     {{ block.super }}
     <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.7/jquery-ui.min.js"></script>
@@ -23,7 +23,7 @@
     {% embedcalendar object %}
     {% if event_form %}
         <form action="" method="post" >
-            {{ event_form|as_uni_form }}
+            {{ event_form|crispy }}
             <input type="submit" value="{%  trans 'Submit' %}">
         </form>
     {% endif %}
